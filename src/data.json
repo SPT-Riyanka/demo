@@ -1,0 +1,44 @@
+[
+    {
+      "id": 1,
+      "name": "Wireless Mouse",
+      "price": 15.99,
+      "availableCount": 25,
+      "image": "wireless-mouse.jpg"
+    },
+    {
+      "id": 2,
+      "name": "Gaming Keyboard",
+      "price": 45.50,
+      "availableCount": 10,
+      "image": "gaming-keyboard.jpg"
+    },
+    {
+      "id": 3,
+      "name": "Noise Cancelling Headphones",
+      "price": 89.99,
+      "availableCount": 5,
+      "image": "noise-cancelling-headphones.jpg"
+    },
+    {
+      "id": 4,
+      "name": "USB-C Hub",
+      "price": 24.75,
+      "availableCount": 50,
+      "image": "usb-c-hub.jpg"
+    },
+    {
+      "id": 5,
+      "name": "Portable SSD",
+      "price": 129.99,
+      "availableCount": 8,
+      "image": "portable-ssd.jpg"
+    },
+    {
+      "id": 6,
+      "name": "Smartphone Stand",
+      "price": 12.49,
+      "availableCount": 100,
+      "image": "smartphone-stand.jpg"
+    }
+  ]  
