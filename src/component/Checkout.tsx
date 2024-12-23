@@ -1,7 +1,7 @@
 import { LoaderCircle, Minus, Plus } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import logo from "../logo.svg";
-import { CheckoutDataI, fetchProducts, ProductI } from "../product.serive";
+import { CheckoutDataI, fetchProducts, ProductI } from "../product.service";
 
 const Product: React.FC<{
   product: ProductI;
@@ -12,15 +12,14 @@ const Product: React.FC<{
 
   useEffect(() => {
     setQty(checkoutData.find((data) => data.id === product.id)?.qty || 0);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checkoutData, product.id]);
 
   return (
-    <div className="grid grid-cols-3 items-center  mb-4">
+    <div className="grid grid-cols-3 items-center mb-4">
       <div>
         <div className="font-medium">{product.name}</div>
         <div className="text-gray-500">Id: {product.id}</div>
-        <div className="text-gray-500">price: ₹{product.price.toFixed(2)}</div>
+        <div className="text-gray-500">Price: ₹{product.price.toFixed(2)}</div>
         <div className="text-gray-400">Available: {product.availableCount}</div>
       </div>
       <div className="flex items-center gap-4">
@@ -33,7 +32,6 @@ const Product: React.FC<{
         </button>
         <input
           type="number"
-          defaultValue={0}
           className="w-24 border py-2 px-4 rounded"
           min="0"
           max={product.availableCount}
@@ -52,19 +50,11 @@ const Product: React.FC<{
         <div className="ml-4 text-xl font-semibold">
           ₹{(product.price * qty).toFixed(2)}
         </div>
-        {product.availableCount <= 5 ? (
-          <div className="bdge bg-red-500 ">
-            Low
-          </div>
-        ) : product.availableCount <= 30 ? (
-          <div className="bdge bg-orange-500">
-            Moderate
-          </div>
-        ) : (
-          <div className="bdge bg-green-500">
-            High
-          </div>
-        )}
+        <div
+          className={`bdge ${product.availableCount <= 5 ? "bg-red-500" : product.availableCount <= 30 ? "bg-orange-500" : "bg-green-500"}`}
+        >
+          {product.availableCount <= 5 ? "Low" : product.availableCount <= 30 ? "Moderate" : "High"}
+        </div>
       </div>
     </div>
   );
@@ -81,7 +71,7 @@ const Checkout = () => {
   const [discount, setDiscount] = useState(0);
   const [total, setTotal] = useState(0);
   const [additionDiscount, setAdditionDiscount] = useState(0);
-  const [couponcode, setCuoponCode] = useState('')
+  const [couponcode, setCuoponCode] = useState('');
 
   useEffect(() => {
     setIsLoading(true);
@@ -90,35 +80,35 @@ const Checkout = () => {
         setProducts(res);
         setFilterProducts(res);
       })
-      .catch((err) => {
-        console.log("error while retriving product");
+      .catch(() => {
+        console.error("Error retrieving products");
       })
       .finally(() => {
         setIsLoading(false);
-        const localStorageData = localStorage.getItem('cart')
-        if(localStorageData != null){
+        const localStorageData = localStorage.getItem('cart');
+        if (localStorageData) {
           setCheckoutData(JSON.parse(localStorageData));
         }
       });
   }, []);
 
   useEffect(() => {
-    let sortProducts = [...filterProducts];
-    sortProducts.sort((a: ProductI, b: ProductI) => {
+    let sortedProducts = [...filterProducts];
+    sortedProducts.sort((a: ProductI, b: ProductI) => {
       const valA = a[sortBy as keyof ProductI];
       const valB = b[sortBy as keyof ProductI];
-  
+
       let compare = 0;
       if (typeof valA === "number" && typeof valB === "number") {
         compare = valA - valB;
       } else if (typeof valA === "string" && typeof valB === "string") {
         compare = valA.localeCompare(valB);
       }
-  
+
       return sortDir === "asc" ? compare : -compare;
     });
-    setFilterProducts(sortProducts);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setFilterProducts(sortedProducts);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortBy, sortDir]);
 
   useEffect(() => {
@@ -128,10 +118,11 @@ const Checkout = () => {
     );
 
     setSubTotal(subtotal);
-    if (subtotal > 1000 && subtotal <= 1500) setDiscount(10);
-    else if (subtotal > 1500 && subtotal <= 2000) setDiscount(15);
-    else if (subTotal > 2000) setDiscount(20);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    if (subtotal > 2000) setDiscount(20);
+    else if (subtotal > 1500) setDiscount(15);
+    else if (subtotal > 1000) setDiscount(10);
+    else setDiscount(0);
   }, [checkoutData]);
 
   useEffect(() => {
@@ -144,16 +135,18 @@ const Checkout = () => {
 
   const updateQty = (type: string, product: ProductI, value?: string) => {
     const index = checkoutData.findIndex((d) => d.id === product.id);
-
+  
     if (type === "inc") {
       if (index < 0) {
         setCheckoutData((data) => [...data, { ...product, qty: 1 }]);
       } else {
         setCheckoutData((data) => {
           const updatedData = [...data];
+          const currentQty = updatedData[index].qty;
+          // Increment by 1, but ensure it's within the available count
           updatedData[index] = {
             ...updatedData[index],
-            qty: updatedData[index].qty + 1,
+            qty: Math.min(currentQty + 1, product.availableCount),
           };
           return updatedData;
         });
@@ -172,7 +165,7 @@ const Checkout = () => {
         }
         return updatedData;
       });
-    } else if (value && +value > 0 && +value <= product.availableCount) {
+    } else if (value && +value >= 0 && +value <= product.availableCount) {
       setCheckoutData((data) => {
         const updateData = [...data];
         if (index >= 0) {
@@ -184,54 +177,45 @@ const Checkout = () => {
       });
     }
   };
+  
 
   const filterProduct = (val: string) => {
-    if (val.length > 0) {
-      setFilterProducts((data) =>
-        data.filter(
+    const filtered = val.length
+      ? products.filter(
           (d) =>
             d.id.toString().includes(val) ||
             d.name.toLowerCase().includes(val.toLowerCase())
         )
-      );
-    } else {
-      setFilterProducts(products);
-    }
+      : products;
+    setFilterProducts(filtered);
   };
 
   const updateCart = (type: string) => {
-    if(type === 'save'){
+    if (type === 'save') {
       localStorage.setItem('cart', JSON.stringify(checkoutData));
-    }else{
+    } else {
       localStorage.removeItem('cart');
       setCheckoutData([]);
     }
-  }
+  };
 
   const applyCoupon = () => {
-    if(couponcode === 'NEW'){
-      setAdditionDiscount(5);
-    }else{
-      setAdditionDiscount(0);
-    }
-  }
+    setAdditionDiscount(couponcode === 'NEW' ? 5 : 0);
+  };
 
   return (
     <>
-      {/* Header */}
       <div className="flex items-center justify-between p-4 border-b">
         <img src={logo} alt="Logo" className="h-16" />
         <h1 className="text-3xl font-bold">Cart</h1>
       </div>
 
-      {/* Content */}
       {isLoading ? (
         <div className="h-full flex items-center justify-center my-10">
           <LoaderCircle size="24" className="animate-spin text-indigo-500" />
         </div>
       ) : (
         <div className="p-4">
-          {/* Search Bar */}
           <div className="flex items-center gap-2 mb-4">
             <input
               type="text"
@@ -241,7 +225,6 @@ const Checkout = () => {
             />
           </div>
 
-          {/* Filters and Buttons */}
           <div className="flex items-center justify-between gap-4 mb-4">
             <div>
               <select
@@ -273,20 +256,18 @@ const Checkout = () => {
             </div>
           </div>
 
-          {/* Product Section */}
-          <div className="text-xl font-semibold mb-4">Product</div>
+          <div className="text-xl font-semibold mb-4">Products</div>
           <div className="border-b pb-4 mb-4">
             {filterProducts.map((product) => (
               <Product
-                product={product}
                 key={product.id}
+                product={product}
                 checkoutData={checkoutData}
                 updateQty={updateQty}
               />
             ))}
           </div>
 
-          {/* Subtotal, Discount, Total */}
           <div className="flex flex-col gap-y-4">
             <p className="flex justify-between">
               <strong>Subtotal:</strong> ₹{subTotal.toFixed(2)}
@@ -305,7 +286,6 @@ const Checkout = () => {
           </div>
 
           <hr className="my-4" />
-          {/* Apply Coupon Code */}
           <div className="flex items-center gap-2">
             <input
               type="text"
@@ -314,11 +294,11 @@ const Checkout = () => {
               value={couponcode}
               onChange={(e) => setCuoponCode(e.target.value)}
             />
-            <button className="btn-primary bg-blue-600" onClick={() => applyCoupon()}>
+            <button className="btn-primary bg-blue-600" onClick={applyCoupon}>
               Apply
             </button>
           </div>
-          <p>{couponcode.length > 0 && couponcode !== 'NEW' && additionDiscount === 0 && "invalid"}</p>
+          <p>{couponcode.length > 0 && couponcode !== 'NEW' && additionDiscount === 0 && "Invalid coupon"}</p>
         </div>
       )}
     </>
