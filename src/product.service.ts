@@ -5,6 +5,7 @@ export interface ProductI {
   name: string;
   price: number;
   availableCount: number;
+  quantity?: number;
 }
 
 export interface CheckoutDataI{
